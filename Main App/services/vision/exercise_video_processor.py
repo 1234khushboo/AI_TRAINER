@@ -4,9 +4,11 @@ import av
 import numpy as np
 import mediapipe as mp
 import threading
+
 from streamlit_webrtc import VideoProcessorBase
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+
 from detectors.squat import SquatDetector
 from detectors.pushup import PushUpDetector
 from detectors.biceps_curl import BicepsCurlDetector
@@ -16,13 +18,25 @@ from services.config.workout_config import POSE_CONNECTIONS
 
 
 class VideoProcessorClass(VideoProcessorBase):
+
     def __init__(self):
+
         self._lock = threading.Lock()
         self._latest_metrics = None
         self._exercise_type = "Squats"
 
-        model_path = os.path.join(os.getcwd(), "ml_models", "pose_landmarker_full.task")
-        base_option = python.BaseOptions(model_asset_path=model_path)
+
+        # Correct MediaPipe model path
+        MODEL_PATH = os.path.join(
+            os.path.dirname(__file__),
+            "../../ml_models/pose_landmarker_full.task"
+        )
+
+
+        base_option = python.BaseOptions(
+            model_asset_path=MODEL_PATH
+        )
+
 
         options = vision.PoseLandmarkerOptions(
             base_options=base_option,
@@ -33,15 +47,26 @@ class VideoProcessorClass(VideoProcessorBase):
             output_segmentation_masks=False
         )
 
-        self._landmarker = vision.PoseLandmarker.create_from_options(options)
+
+        self._landmarker = vision.PoseLandmarker.create_from_options(
+            options
+        )
+
 
         self._detectors = {
+
             "Squats": SquatDetector(),
+
             "Push-ups": PushUpDetector(),
+
             "Biceps Curls (Dumbbell)": BicepsCurlDetector(),
+
             "Shoulder Press": ShoulderPressDetector(),
+
             "Lunges": LungesDetector(),
+
         }
+
 
         self._frame_timestamps_ms = 0
     
